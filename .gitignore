@@ -1,0 +1,16 @@
+.settings/**
+bin/**
+libs/**
+target/**
+.classpath
+.project
+/src/bin**
+*.jar
+*.mwb
+*.bak
+*.sql
+*.txt
+*.log
+*.html
+*.json
+/target**
