@@ -55,10 +55,10 @@ public class CPU_Thread implements Runnable{
 				float rand2 = aRand.nextFloat();
 				float rand3 = (float) (variance*(Math.sqrt(-2*Math.log(rand1))*Math.cos(2*Math.PI*rand2)));
 				float rand4 = (float) (variance*(Math.sqrt(-2*Math.log(rand1))*Math.sin(2*Math.PI*rand2)));
-				price = price + mu*price*dt + sigma*price*rand3;
-		        price = price + mu*price*dt + sigma*price*rand4;
-			}
 			
+				price = price + mu*price*dt + sigma*price*rand3;
+		        price = price + mu*price*dt + sigma*price*rand4;  
+			}
 			res[i] = price;
 		}
 		

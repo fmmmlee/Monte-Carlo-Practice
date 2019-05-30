@@ -5,6 +5,8 @@ import static org.jocl.CL.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.MathContext;
 import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.io.FileUtils;
@@ -118,7 +120,7 @@ public class OpenCL_Accelerated {
 		
 		/* global/local work sizes */
 		long global_work_num_simulations[] = new long[]{(long) (num_simulations/(Math.pow(10, 1.0-dimensions)))};
-		long local_work_num_simulations[] = new long[]{32}; //may change this
+		long local_work_num_simulations[] = new long[]{32}; //TODO: Make this the greatest common factor of the maximum (512 on my system, I think) and the global work size
 		
 		/* getting the name of the platform */
 		long size_of_platform_name[] = new long[1];
@@ -175,23 +177,29 @@ public class OpenCL_Accelerated {
 		
 		
 		/********printing results********/
-		/* prices */
-		long avg_price = 0;
-		for(float price : result)
-		{
-			avg_price += price;
-		}
 		
 		System.out.println("======================================================");
-		System.out.println("Length of each simulation: " + time + " years, with randomness inserted at " + steps_per_sim + " intervals.");
+		System.out.println("[GPU] Length of each simulation: " + time + " years, with randomness inserted at " + steps_per_sim + " intervals.");
 		System.out.println("======================================================");
-		System.out.println("Number of individual simulations run: " + num_simulations);
-		System.out.println("Average time per calculation:" + bundled_utilities.Time.from_nano(kernel_time/num_simulations));
-		System.out.println("Kernel Execution Time: " + bundled_utilities.Time.from_nano(kernel_time));
-		System.out.println("Time from before queueing command in Java to after reading GPU memory in Java:" + bundled_utilities.Time.from_nano(total_time));
-		System.out.println("Application overhead (around the kernel specifically) and GPU startup overhead based on the above two times is:" + bundled_utilities.Time.from_nano(total_time - kernel_time));
+		System.out.println("[GPU] Number of individual simulations run: " + num_simulations);
+		System.out.println("[GPU] Average time per calculation:" + bundled_utilities.Time.from_nano(kernel_time/num_simulations));
+		System.out.println("[GPU] Kernel Execution Time: " + bundled_utilities.Time.from_nano(kernel_time));
+		System.out.println("[GPU] Time from before queueing command in Java to after reading GPU memory in Java:" + bundled_utilities.Time.from_nano(total_time));
+		System.out.println("[GPU] Application overhead (around the kernel specifically) and GPU startup overhead based on the above two times is:" + bundled_utilities.Time.from_nano(total_time - kernel_time));
 		System.out.println("======================================================");
-		System.out.println("Projected option price after the time period specified: " + (float)avg_price/num_simulations);
+		
+		/* prices */
+		BigDecimal avg_price = new BigDecimal(0.0f);
+		int successful_runs = num_simulations;
+		for(float price : result)
+		{
+			if(Float.toString(price) == "NaN")
+				successful_runs -= 1;
+			else
+				avg_price = avg_price.add(BigDecimal.valueOf(price));
+		}
+
+		System.out.println("[GPU] Projected option price after the time period specified: " + avg_price.divide(new BigDecimal(successful_runs), BigDecimal.ROUND_UP));
 		System.out.println("======================================================");
 	}
 }
