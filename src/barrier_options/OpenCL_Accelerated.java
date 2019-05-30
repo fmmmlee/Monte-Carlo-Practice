@@ -6,7 +6,6 @@ import static org.jocl.CL.*;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.math.MathContext;
 import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.io.FileUtils;
@@ -25,6 +24,7 @@ import org.jocl.cl_queue_properties;
 
 //TODO: Implement barriers into the kernel - it's in the package name, after all
 //TODO: Add option to write to file/database for metrics, with codes like [CLOCKS] and [TOTAL] for easier parsing later
+//TODO: Write generic multithreaded function to average values in an array
 
 /*
  * Things with a random // after them are things that I don't fully understand and need to research/look @ their docs
