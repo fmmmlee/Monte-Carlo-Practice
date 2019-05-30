@@ -24,8 +24,12 @@ public class Initializer {
 	public static void main(String[] args) throws InterruptedException, IOException
 	{
 		System.out.println("[STATUS] Program Initiated");
-		int iterations = 100000;
-		//Double_Approximation.threaded(iterations);
+		int iterations = 1000;
+		System.out.println("========================================");
+		System.out.println("Hyperthreaded CPU");
+		CPU_approx.threaded(iterations);
+		System.out.println("========================================");
+		System.out.println("GPU Accelerated");
 		OpenCL_Accelerated.accelerated(iterations);
 	}
 }

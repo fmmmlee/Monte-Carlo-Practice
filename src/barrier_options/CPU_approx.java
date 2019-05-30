@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * 
  * 
  * 
- * Using double to see how much faster it is
+ * Using float to see how much faster it is
  * 
  */
 public class CPU_approx {
@@ -27,31 +27,26 @@ public class CPU_approx {
 		int max_threads = Runtime.getRuntime().availableProcessors();
 
 		/* printing some basic thread info */
-		System.out.println("========================================");
+
 		System.out.println("Thread count = " + max_threads);
 		
 		int per_thread = iterations/max_threads;
-		System.out.println(per_thread);
 		int extras = iterations-(per_thread*max_threads);
 		
 		int size = iterations;
-		double array_one[] = new double[size];
-		double array_two[] = new double[size];
-		double result[] = new double[size];
-		
-		Random anewrandom = new Random();
-		
-		for(int i = 0; i < size; i++)
-		{
-			array_one[i] = anewrandom.nextDouble();
-			array_two[i] = anewrandom.nextDouble();
-		}
+		float result[] = new float[size];
+
+		final float mu = 0.1f;
+		final float sigma = 0.1f;
+		final float time = 1.0f;
+		final float start_price = 100.0f;
+		final int steps_per_sim = 365;
 		
 		/* spinning threads */
 		Thread[] threads = new Thread[max_threads];
 		for(int i = 0; i < max_threads; i++)
-			threads[i] = new Thread(new CPU_Thread(array_one, array_two, result, i, per_thread));
-		Thread remainder = new Thread(new CPU_Thread(array_one, array_two, result, 12, extras));
+			threads[i] = new Thread(new CPU_Thread(result, steps_per_sim, start_price, sigma, mu, time, i, per_thread));
+		Thread remainder = new Thread(new CPU_Thread(result, steps_per_sim, start_price, sigma, mu, time, 12, extras));
 		
 		/* starting threads */
 		for(int i = 0; i < max_threads; i++)
@@ -65,6 +60,16 @@ public class CPU_approx {
 		
 		/* getting result and printing stats/output to console */
 		long end_time = System.nanoTime();
+		float huge = 0;
+		for(float a : result)
+		{
+			if(a != 0)
+			{
+				huge+=a;
+			}
+		}
+		huge /= size;
+		System.out.println(huge);
 		System.out.println(bundled_utilities.Time.from_nano(end_time-start_time));
 	}
 }
