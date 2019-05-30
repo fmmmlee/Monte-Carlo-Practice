@@ -33,11 +33,12 @@ public class Double_Thread implements Runnable{
 		/* looping */
 		for(int i = 0; i <= ITERATIONS; i++)
 		{
-			Double x = ThreadLocalRandom.current().nextDouble();
+			in_circle++;
+			/*Double x = ThreadLocalRandom.current().nextDouble();
 			Double y = ThreadLocalRandom.current().nextDouble();
 			
 			if((x*x)+(y*y) <= 1)	//checks if value is within the section, based on the formula for an ellipse
-				in_circle++;
+				in_circle++;*/
 		}
 		
 		/* adding final result of operation to the shared result */

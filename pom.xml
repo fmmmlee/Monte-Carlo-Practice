@@ -16,4 +16,39 @@
       </plugin>
     </plugins>
   </build>
+  
+  <dependencies>
+  	<dependency>
+	    <groupId>org.jocl</groupId>
+	    <artifactId>jocl</artifactId>
+	    <version>2.0.1</version>
+	</dependency>
+	<!-- https://mvnrepository.com/artifact/com.nativelibs4java/javacl -->
+<dependency>
+    <groupId>com.nativelibs4java</groupId>
+    <artifactId>javacl</artifactId>
+    <version>1.0.0-RC4</version>
+</dependency>
+	
+	<!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
+		<dependency>
+		 	<groupId>commons-io</groupId>
+				<artifactId>commons-io</artifactId>
+				<version>2.6</version><!--$NO-MVN-MAN-VER$-->
+				<scope>compile</scope>
+	</dependency>
+	<!-- https://mvnrepository.com/artifact/org.lwjgl/lwjgl -->
+	<dependency>
+    <groupId>org.lwjgl</groupId>
+    <artifactId>lwjgl</artifactId>
+    <version>3.1.0</version>
+	</dependency>
+	<!-- https://mvnrepository.com/artifact/org.lwjgl/lwjgl-opencl -->
+<dependency>
+    <groupId>org.lwjgl</groupId>
+    <artifactId>lwjgl-opencl</artifactId>
+    <version>3.2.2</version>
+</dependency>
+	
+  </dependencies>
 </project>

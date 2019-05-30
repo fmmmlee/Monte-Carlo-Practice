@@ -1,4 +1,4 @@
-package pi_from_circle;
+package barrier_options;
 
 import java.io.IOException;
 
@@ -16,12 +16,12 @@ import java.io.IOException;
  * 
  */
 
-public class Simulator {
+public class Initializer {
 
 	public static void main(String[] args) throws InterruptedException, IOException
 	{
-		long iterations = 10L;
+		int iterations = 100;
 		//Double_Approximation.threaded(iterations);
-		OpenCL_mwc64x.accelerated(iterations);
+		OpenCL_Accelerated.accelerated(iterations);
 	}
 }

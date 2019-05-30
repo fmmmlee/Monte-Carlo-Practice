@@ -74,6 +74,6 @@ public class Double_Approximation {
 		
 		/* getting result and printing stats/output to console */
 		long result = atomic_result.get();
-		Printing_Results.console("Multithreaded Double",result, iterations, System.nanoTime()-start_time);
+		Printing_Results.console("Multithreaded Double", result, iterations, System.nanoTime()-start_time);
 	}
 }
