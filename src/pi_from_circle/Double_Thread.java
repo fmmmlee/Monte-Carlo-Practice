@@ -1,6 +1,5 @@
 package pi_from_circle;
 
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicLong;
 
 /*

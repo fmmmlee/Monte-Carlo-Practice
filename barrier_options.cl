@@ -43,6 +43,16 @@ kernel void barrier_simulation(global float* result, int steps_per_sim, float st
         price = price + mu*price*dt + sigma*price*rand4;
     }
     
+    //compensating for possible leftover step
+    if(steps_per_sim % 2 != 0)
+    {
+       //uniformly distributed 0-1 randoms
+        float rand1 = (float)MWC64X_NextUint(&rng)/(float)(UINT_MAX);
+        float rand2 = (float)MWC64X_NextUint(&rng)/(float)((UINT_MAX));
+        float rand3 = variance*(sqrt(-2*log(rand1))*cos(2*M_PI*rand2));
+        price = price + mu*price*dt + sigma*price*rand3;
+    }
+    
     //after completing specified number of steps, input result into array
     result[gid] = price;
 
