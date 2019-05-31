@@ -1,6 +1,5 @@
 # Monte-Carlo-Practice
-Just getting in some practice trying out different methods of calculating various things using Monte Carlo simulations.
-
+Just getting in some practice on different concepts (Monte Carlo Simulations, OpenCL, multithreading, lots of stuff)
 ## TODOS
 
 ### barrier_options
