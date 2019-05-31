@@ -26,9 +26,9 @@ import org.jocl.cl_queue_properties;
 import bundled_utilities.Average_of_Array;
 import bundled_utilities.Time;
 
-//TODO: Implement barriers into the kernel - it's in the package name, after all
+//TODO: Implement barriers into the option price calculations in the kernel - it's in the package name, after all
+//TODO: Change kernel to use Kahan summation
 //TODO: Add option to write to file/database for metrics, with codes like [CLOCKS] and [TOTAL] for easier parsing later
-//TODO: Write generic multithreaded function to average values in an array
 
 /*
  * Things with a random // after them are things that I don't fully understand and need to research/look @ their docs
