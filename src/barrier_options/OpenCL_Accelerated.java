@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.io.FileUtils;
+import org.jocl.CL;
 import org.jocl.Pointer;
 import org.jocl.Sizeof;
 import org.jocl.cl_command_queue;
@@ -111,6 +112,20 @@ public class OpenCL_Accelerated {
 			
 		/* setting up kernel and adding arguments */
 		cl_kernel clKernel = clCreateKernel(program, "barrier_simulation", null);
+		
+		long multiple[] = new long[1];
+		Pointer multPtr = Pointer.to(multiple);
+		clGetKernelWorkGroupInfo(clKernel, device, CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, Sizeof.cl_long, multPtr, null);
+		long preferred_mult = multiple[0];
+		System.out.println("Preferred work group size multiple: " + preferred_mult);
+		
+		long max[] = new long[1];
+		Pointer maxPtr = Pointer.to(max);
+		clGetKernelWorkGroupInfo(clKernel, device, CL_KERNEL_WORK_GROUP_SIZE, Sizeof.cl_long, maxPtr, null);
+		long max_val = max[0];
+		System.out.println("Maximum work group size: " + max_val);
+		
+		//TODO: set local work size to greatest common factor of maximum and preferred mult
 		clSetKernelArg(clKernel, 0, Sizeof.cl_mem, Pointer.to(memObjects[0]));
 		clSetKernelArg(clKernel, 1, Sizeof.cl_uint, perPtr);
 		clSetKernelArg(clKernel, 2, Sizeof.cl_float, startPtr);
@@ -120,7 +135,7 @@ public class OpenCL_Accelerated {
 		
 		/* global/local work sizes */
 		long global_work_num_simulations[] = new long[]{(long) (num_simulations/(Math.pow(10, 1.0-dimensions)))};
-		long local_work_num_simulations[] = new long[]{32}; //TODO: Make this the greatest common factor of the maximum (512 on my system, I think) and the global work size
+		long local_work_num_simulations[] = new long[]{512}; //TODO: Compare runtimes with different multiples of 1024 and different amounts of data to work with
 		
 		/* getting the name of the platform */
 		long size_of_platform_name[] = new long[1];
