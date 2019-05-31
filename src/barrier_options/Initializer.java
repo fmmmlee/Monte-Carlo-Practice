@@ -24,13 +24,17 @@ public class Initializer {
 	public static void main(String[] args) throws InterruptedException, IOException
 	{
 		System.out.println("[STATUS] Program Initiated");
-		int iterations = 3200000;
+		
+		int iterations = 32000000;
 		/*System.out.println("======================================================");
 		System.out.println("[CPU] Hyperthreaded");
 		CPU_approx.threaded(iterations);
 		System.out.println("======================================================");
 		System.out.println("======================================================");
 		System.out.println("======================================================");*/
+		
+		
+		
 		System.out.println("[GPU] Accelerated");
 		OpenCL_Accelerated.accelerated(iterations);
 	}
