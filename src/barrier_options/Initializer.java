@@ -26,16 +26,15 @@ public class Initializer {
 		System.out.println("[STATUS] Program Initiated");
 		
 		int iterations = 32000000;
-		/*System.out.println("======================================================");
+		System.out.println("======================================================");
+		System.out.println("======================================================");
 		System.out.println("[CPU] Hyperthreaded");
 		CPU_approx.threaded(iterations);
 		System.out.println("======================================================");
 		System.out.println("======================================================");
-		System.out.println("======================================================");*/
 		
 		
-		
-		System.out.println("[GPU] Accelerated");
+		System.out.println("[GPU] Accelerated (GPGPU)");
 		OpenCL_Accelerated.accelerated(iterations);
 	}
 }

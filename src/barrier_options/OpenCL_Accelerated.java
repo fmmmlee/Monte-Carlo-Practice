@@ -120,13 +120,13 @@ public class OpenCL_Accelerated {
 		Pointer multPtr = Pointer.to(multiple);
 		clGetKernelWorkGroupInfo(clKernel, device, CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, Sizeof.cl_long, multPtr, null);
 		long preferred_mult = multiple[0];
-		System.out.println("Preferred work group size multiple: " + preferred_mult);
+		System.out.println("[INFO] Preferred work group size multiple: " + preferred_mult);
 		
 		long max[] = new long[1];
 		Pointer maxPtr = Pointer.to(max);
 		clGetKernelWorkGroupInfo(clKernel, device, CL_KERNEL_WORK_GROUP_SIZE, Sizeof.cl_long, maxPtr, null);
 		long max_val = max[0];
-		System.out.println("Maximum work group size: " + max_val);
+		System.out.println("[INFO] Maximum work group size: " + max_val);
 		
 		//TODO: set local work size to greatest common factor of maximum and preferred mult
 		clSetKernelArg(clKernel, 0, Sizeof.cl_mem, Pointer.to(memObjects[0]));
@@ -222,15 +222,16 @@ public class OpenCL_Accelerated {
 		long end_iterative = System.nanoTime();
 		
 		System.out.println("[GPU] Projected option price after the time period specified: " + avg_price + " (average calculated iteratively)");
-		System.out.println("[METRICS] Time to compute average: " + Time.from_nano(end_iterative - start_iterative));
+		System.out.println("[GPU] Time to compute average: " + Time.from_nano(end_iterative - start_iterative));
 		
 		/* prices - concurrent average function */
 		long start_mult = System.nanoTime();
 		BigDecimal res = Average_of_Array.avg_float(result);
 		long end_mult = System.nanoTime();
 		
-		System.out.println("[GPU] Projected option price after the time period specified: " + res + " (average calculated using concurrent function)");
-		System.out.println("[METRICS] Time to compute average: " + Time.from_nano(end_mult - start_mult));
+		System.out.println("\n[GPU] Projected option price after the time period specified: " + res + " (average calculated using concurrent function)");
+		System.out.println("[GPU] Time to compute average: " + Time.from_nano(end_mult - start_mult));
+		System.out.println("======================================================");
 		System.out.println("======================================================");
 	}
 }
