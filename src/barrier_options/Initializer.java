@@ -24,17 +24,20 @@ public class Initializer {
 	public static void main(String[] args) throws InterruptedException, IOException
 	{
 		System.out.println("[STATUS] Program Initiated");
+		double mu = 0.0025; //note: in kernel, risk is same as mu
+		double sigma = 0.28;
+		double years = 1.0;
+		double start_price = 105.0;
+		int path_chng = 365;
+		double barrier = 101.0;
+		double strike_price = 100;
+		OptionParams parameters = new OptionParams(mu, sigma, years, start_price, path_chng, barrier, strike_price);
 		
-		int iterations = 32000000;
-		System.out.println("======================================================");
-		System.out.println("======================================================");
+		int paths = 32000000;
+			
 		System.out.println("[CPU] Hyperthreaded");
-		CPU_approx.threaded(iterations);
-		System.out.println("======================================================");
-		System.out.println("======================================================");
-		
-		
+		CPU_approx.threaded(paths, parameters);
 		System.out.println("[GPU] Accelerated (GPGPU)");
-		OpenCL_Accelerated.accelerated(iterations);
+		OpenCL_Accelerated.accelerated(paths, parameters);
 	}
 }

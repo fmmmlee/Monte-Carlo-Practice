@@ -10,23 +10,24 @@ import java.util.Random;
  * 
  * 
  * 
- * Using float to see how much faster it is
+ * Using double to see how much faster it is
  * 
  */
 public class CPU_Thread implements Runnable{
 
 
-	float[] res;
-	float start_price;
+	double[] res;
+	double start_price;
 	int startingindex;
 	int num;
 	int per_time;
-	float price;
-	float sigma;
-	float mu;
-	float time;
+	double price;
+	double sigma;
+	double mu;
+	double barrier;
+	double time;
 	
-	CPU_Thread(float[] result, int steps_per_sim, float start_price, float sigma, float mu, float time, int threadnum, int jobs)
+	CPU_Thread(double[] result, int steps_per_sim, double start_price, double sigma, double mu, double time, int threadnum, int jobs, double barrier)
 	{
 		res = result;
 		startingindex = threadnum*jobs;
@@ -36,13 +37,14 @@ public class CPU_Thread implements Runnable{
 		this.sigma = sigma;
 		this.mu = mu;
 		this.time = time;		
+		this.barrier = barrier;
 	}
 	
 	
 	public void run()
 	{
-		float variance = sigma*sigma;
-		float dt = (float)time/per_time;
+		double v = mu - (sigma*sigma)/2;
+		double dt = (double)time/per_time;
 		
 		/* looping */
 		for(int i = startingindex; i < startingindex+num; i++)
@@ -51,15 +53,31 @@ public class CPU_Thread implements Runnable{
 			price = start_price;
 			for(int j = 0; j < per_time/2; j++)
 			{
-				float rand1 = aRand.nextFloat();
-				float rand2 = aRand.nextFloat();
-				float rand3 = (float) (variance*(Math.sqrt(-2*Math.log(rand1))*Math.cos(2*Math.PI*rand2)));
-				float rand4 = (float) (variance*(Math.sqrt(-2*Math.log(rand1))*Math.sin(2*Math.PI*rand2)));
-			
-				price = price + mu*price*dt + sigma*price*rand3;
-		        price = price + mu*price*dt + sigma*price*rand4;  
+				double rand1 = aRand.nextDouble();
+				double rand2 = aRand.nextDouble();
+				double rand3 = (double) Math.sqrt(-2*Math.log(rand1))*Math.cos(2*Math.PI*rand2);
+				double rand4 = (double) Math.sqrt(-2*Math.log(rand1))*Math.sin(2*Math.PI*rand2);
+		
+				price = price*Math.exp(v*dt + sigma*(Math.sqrt(dt))*rand3);
+				if(price < barrier)
+					break;
+		        price = price*Math.exp(v*dt + sigma*(Math.sqrt(dt))*rand4);
+		        if(price < barrier)
+					break;
 			}
-			res[i] = price;
+			
+			if(per_time % 2 != 0 && price >= barrier)
+			{
+				double rand1 = aRand.nextDouble();
+				double rand2 = aRand.nextDouble();
+				double rand3 = (double) Math.sqrt(-2*Math.log(rand1))*Math.cos(2*Math.PI*rand2);
+				price = price*Math.exp(v*dt + sigma*(Math.sqrt(dt))*rand3);
+			}
+			
+			if(price >= barrier)
+				res[i] = price;
+			else
+				res[i] = 0.0/0.0;
 		}
 		
 	}

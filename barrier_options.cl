@@ -10,19 +10,21 @@
 e.g. if B is dependent on A, and you compute a bunch of Bs from a bunch of As, how to know whether it is worth it to check a new A value against the computed A-B pairs to see if the computation has already been done (might be a lot of pairs, but might also be a huge computation so iterating through list is not significant relatively speaking)*/
 
 
-kernel void barrier_simulation(global float* result, int steps_per_sim, float start_price, float sigma, float mu, float time)
+kernel void barrier_simulation(global double* result, global double* payoff, int steps_per_sim, double start_price, double sigma, double mu, double time, double barrier_a, double strike_price)
 {
     //initializing the starting price of the option
-    float price = start_price;
-    
+    double price = start_price;
+
+    double barrier = barrier_a*(exp(+0.5826*sigma*sqrt(time/steps_per_sim)));
+
     //work id
     int gid = get_global_id(0);
-    
+
     //time per iteration
-    float dt = (float) time/steps_per_sim;
-    
-    float variance = sigma*sigma;
-    
+    double dt = (double) time/steps_per_sim;
+
+    double v = mu - ((sigma*sigma)/2);
+
     mwc64x_state_t rng;
     MWC64X_SeedStreams(&rng, 0, steps_per_sim);
 
@@ -31,29 +33,45 @@ kernel void barrier_simulation(global float* result, int steps_per_sim, float st
     for(int i = 0; i < steps_per_sim/2; i++)
     {
         //uniformly distributed 0-1 randoms
-        float rand1 = (float)MWC64X_NextUint(&rng)/(float)(UINT_MAX);
-        float rand2 = (float)MWC64X_NextUint(&rng)/(float)((UINT_MAX));
-                
+        //I think due to the cast to single precision double I'm probably losing a lot of the random period available (since I'm losing a huge chunk of random digits)
+        double rand1 = (double)MWC64X_NextUint(&rng)/(UINT_MAX);
+        double rand2 = (double)MWC64X_NextUint(&rng)/((UINT_MAX));
+
         //Box–Muller transformation and variance adjustment
-        float rand3 = variance*(sqrt(-2*log(rand1))*cos(2*M_PI*rand2));
-        float rand4 = variance*(sqrt(-2*log(rand1))*sin(2*M_PI*rand2));
-        
+        double rand3 = (sqrt(-2*log(rand1))*cos(2*M_PI*rand2));
+        double rand4 = (sqrt(-2*log(rand1))*sin(2*M_PI*rand2));
+
         //Euler method
-        price = price + mu*price*dt + sigma*price*rand3;
-        price = price + mu*price*dt + sigma*price*rand4;
+        price = price*exp(v*dt + sigma*(sqrt(dt))*rand3);
+        if(price < barrier)
+            break;
+        price = price*exp(v*dt + sigma*(sqrt(dt))*rand4);
+        if(price < barrier)
+            break;
     }
-    
+
     //compensating for possible leftover step
-    if(steps_per_sim % 2 != 0)
+    if(steps_per_sim % 2 != 0 && price >= barrier)
     {
        //uniformly distributed 0-1 randoms
-        float rand1 = (float)MWC64X_NextUint(&rng)/(float)(UINT_MAX);
-        float rand2 = (float)MWC64X_NextUint(&rng)/(float)((UINT_MAX));
-        float rand3 = variance*(sqrt(-2*log(rand1))*cos(2*M_PI*rand2));
-        price = price + mu*price*dt + sigma*price*rand3;
+        double rand1 = (double)MWC64X_NextUint(&rng)/(double)(UINT_MAX);
+        double rand2 = (double)MWC64X_NextUint(&rng)/(double)((UINT_MAX));
+        double rand3 = (sqrt(-2*log(rand1))*cos(2*M_PI*rand2));
+        price = price*exp(v*dt + sigma*(sqrt(dt))*rand3);
     }
-    
+
     //after completing specified number of steps, input result into array
-    result[gid] = price;
+    result[gid] = (price >= barrier ? price : (0.0/0.0));
+    //input expected payoff into array
+    if(price >= barrier)
+    {
+        double thispayoff = price - strike_price;
+        payoff[gid] = (thispayoff > 0 ? thispayoff*exp((-mu)*time) : 0.0);
+    } else {
+        payoff[gid] = 0.0;
+    }
 
 }
+
+
+

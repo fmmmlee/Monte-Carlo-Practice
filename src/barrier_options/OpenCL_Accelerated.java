@@ -6,7 +6,6 @@ import static org.jocl.CL.*;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.io.FileUtils;
@@ -29,14 +28,30 @@ import bundled_utilities.Time;
 //TODO: Implement barriers into the option price calculations in the kernel - it's in the package name, after all
 //TODO: Change kernel to use Kahan summation
 //TODO: Add option to write to file/database for metrics, with codes like [CLOCKS] and [TOTAL] for easier parsing later
+//TODO: Graphing utility
+//full explanation of estimating down-and-out exotic option prices can be found at https://pdfs.semanticscholar.org/542f/6e1e9338632e3bc5b56dad2515854e34190f.pdf
+
 
 /*
  * Things with a random // after them are things that I don't fully understand and need to research/look @ their docs
  */
 public class OpenCL_Accelerated {
 
-	public static void accelerated(int count_in) throws IOException, InterruptedException
+	public static void accelerated(int count_in, OptionParams requested) throws IOException, InterruptedException
 	{
+		/* variables used in kernel args and run configuration */
+		final double mu = requested.mu;
+		final double sigma = requested.sigma;
+		final double years = requested.years;
+		final double start_price = requested.start_price;
+		final int num_simulations = count_in;
+		final int steps_per_sim = requested.steps_per_sim;
+		final double strike_price = requested.strike_price;
+		final double barrier = requested.barrier;
+		double result[] = new double[num_simulations];
+		double payoff[]= new double[num_simulations];
+		
+		/* opencl setup */
 		final int platformIndex = 0;
 		final int dimensions = 1;
 		final long deviceType = CL_DEVICE_TYPE_ALL;
@@ -47,15 +62,9 @@ public class OpenCL_Accelerated {
 		
 		String kernel = FileUtils.readFileToString(kernel_file, StandardCharsets.UTF_8);
 		
-		/* program arguments and run configuration */
-		final float mu = 0.1f;
-		final float sigma = 0.1f;
-		final float time = 1.0f;
-		final float start_price = 100.0f;
-		final int num_simulations = count_in;
-		final int steps_per_sim = 365;
-		float result[] = new float[num_simulations];
-		
+		/* padding */
+		System.out.println("======================================================");
+		System.out.println("======================================================");
 		
 		/**** error messages, metrics, etc ****/
 		setExceptionsEnabled(true);
@@ -66,11 +75,14 @@ public class OpenCL_Accelerated {
 		
 		/* argument pointers */
 		Pointer resultPtr = Pointer.to(result);
+		Pointer payPtr = Pointer.to(payoff);
+		Pointer strikePtr = Pointer.to(new double[]{strike_price});
 		Pointer perPtr = Pointer.to(new int[]{steps_per_sim});
-		Pointer startPtr = Pointer.to(new float[]{start_price});
-		Pointer sigmaPtr = Pointer.to(new float[]{sigma});
-		Pointer muPtr = Pointer.to(new float[]{mu});
-		Pointer timePtr = Pointer.to(new float[]{time});
+		Pointer startPtr = Pointer.to(new double[]{start_price});
+		Pointer sigmaPtr = Pointer.to(new double[]{sigma});
+		Pointer muPtr = Pointer.to(new double[]{mu});
+		Pointer yearsPtr = Pointer.to(new double[]{years});
+		Pointer barPtr = Pointer.to(new double[]{barrier});
 		
 		/* number of platforms */
 		int numPlatformsArray[] = new int[1];
@@ -106,8 +118,9 @@ public class OpenCL_Accelerated {
 		cl_command_queue commandQueue = clCreateCommandQueueWithProperties(context, device, for_timing, err);
 		
 		/* memory objects for reading data from GPU after execution */
-		cl_mem memObjects[] = new cl_mem[1];
-		memObjects[0] = clCreateBuffer(context, CL_MEM_READ_WRITE, num_simulations*Sizeof.cl_float, null, null);
+		cl_mem memObjects[] = new cl_mem[2];
+		memObjects[0] = clCreateBuffer(context, CL_MEM_READ_WRITE, num_simulations*Sizeof.cl_double, null, null);
+		memObjects[1] = clCreateBuffer(context, CL_MEM_READ_WRITE, num_simulations*Sizeof.cl_double, null, null);
 		
 		/* creating program */
 		cl_program program = clCreateProgramWithSource(context, 1, new String[] {kernel}, null, null);
@@ -130,15 +143,18 @@ public class OpenCL_Accelerated {
 		
 		//TODO: set local work size to greatest common factor of maximum and preferred mult
 		clSetKernelArg(clKernel, 0, Sizeof.cl_mem, Pointer.to(memObjects[0]));
-		clSetKernelArg(clKernel, 1, Sizeof.cl_uint, perPtr);
-		clSetKernelArg(clKernel, 2, Sizeof.cl_float, startPtr);
-		clSetKernelArg(clKernel, 3, Sizeof.cl_float, sigmaPtr);
-		clSetKernelArg(clKernel, 4, Sizeof.cl_float, muPtr);
-		clSetKernelArg(clKernel, 5, Sizeof.cl_float, timePtr);
+		clSetKernelArg(clKernel, 1, Sizeof.cl_mem, Pointer.to(memObjects[1]));
+		clSetKernelArg(clKernel, 2, Sizeof.cl_uint, perPtr);
+		clSetKernelArg(clKernel, 3, Sizeof.cl_double, startPtr);
+		clSetKernelArg(clKernel, 4, Sizeof.cl_double, sigmaPtr);
+		clSetKernelArg(clKernel, 5, Sizeof.cl_double, muPtr);
+		clSetKernelArg(clKernel, 6, Sizeof.cl_double, yearsPtr);
+		clSetKernelArg(clKernel, 7, Sizeof.cl_double, barPtr);
+		clSetKernelArg(clKernel, 8, Sizeof.cl_double, strikePtr);
 		
 		/* global/local work sizes */
 		long global_work_num_simulations[] = new long[]{(long) (num_simulations/(Math.pow(10, 1.0-dimensions)))};
-		long local_work_num_simulations[] = new long[]{512}; //TODO: Compare runtimes with different multiples of 1024 as the local work sizes and different amounts of data to work with
+		long local_work_num_simulations[] = new long[]{512}; //TODO: Compare runyearss with different multiples of 1024 as the local work sizes and different amounts of data to work with
 		
 		/* getting the name of the platform */
 		long size_of_platform_name[] = new long[1];
@@ -166,7 +182,8 @@ public class OpenCL_Accelerated {
 		clFinish(commandQueue);
 		
 		/* post-execution (this call blocks because I don't always leave a wait call before it), reading memory from buffer into pointer */
-		clEnqueueReadBuffer(commandQueue, memObjects[0], CL_TRUE, 0, (num_simulations*Sizeof.cl_float), resultPtr, 0, null, null);
+		clEnqueueReadBuffer(commandQueue, memObjects[0], CL_TRUE, 0, (num_simulations*Sizeof.cl_double), resultPtr, 0, null, null);
+		clEnqueueReadBuffer(commandQueue, memObjects[1], CL_TRUE, 0, (num_simulations*Sizeof.cl_double), payPtr, 0, null, null);
 		
 		/* output/cleanup */
 		long end_time = System.nanoTime();
@@ -197,40 +214,27 @@ public class OpenCL_Accelerated {
 		/********printing results********/
 		
 		System.out.println("======================================================");
-		System.out.println("[GPU] Length of each simulation: " + time + " years, with randomness inserted at " + steps_per_sim + " intervals.");
+		System.out.println("[GPU] Length of each simulation: " + years + " years");
+		System.out.println("[GPU] Price path decisions calculated at " + steps_per_sim + " intervals.");
 		System.out.println("======================================================");
 		System.out.println("[GPU] Number of individual simulations run: " + num_simulations);
 		System.out.println("[GPU] Average time per calculation:" + Time.from_nano(kernel_time/num_simulations));
 		System.out.println("[GPU] Kernel Execution Time: " + Time.from_nano(kernel_time));
 		System.out.println("[GPU] Time from before queueing command in Java to after reading GPU memory in Java:" + Time.from_nano(total_time));
-		System.out.println("[GPU] Application overhead (around the kernel specifically) and GPU startup overhead based on the above two times is:" + Time.from_nano(total_time - kernel_time));
+		System.out.println("[GPU] Application and GPU command queue overhead based on the above two times is:" + Time.from_nano(total_time - kernel_time));
 		System.out.println("======================================================");
 		
-		
-		/* prices - iterative averaging*/
-		long start_iterative = System.nanoTime();
-		BigDecimal avg_price = new BigDecimal(0.0f);
-		int successful_runs = num_simulations;
-		for(float price : result)
-		{
-			if(Float.isNaN(price))
-				successful_runs -= 1;
-			else
-				avg_price = avg_price.add(BigDecimal.valueOf(price));
-		}
-		avg_price = avg_price.divide(BigDecimal.valueOf(successful_runs), RoundingMode.HALF_UP);
-		long end_iterative = System.nanoTime();
-		
-		System.out.println("[GPU] Projected option price after the time period specified: " + avg_price + " (average calculated iteratively)");
-		System.out.println("[GPU] Time to compute average: " + Time.from_nano(end_iterative - start_iterative));
-		
 		/* prices - concurrent average function */
+		//TODO: just do this averaging on the GPU too
 		long start_mult = System.nanoTime();
-		BigDecimal res = Average_of_Array.avg_float(result);
+		BigDecimal res = Average_of_Array.avg_double(result);
 		long end_mult = System.nanoTime();
 		
-		System.out.println("\n[GPU] Projected option price after the time period specified: " + res + " (average calculated using concurrent function)");
-		System.out.println("[GPU] Time to compute average: " + Time.from_nano(end_mult - start_mult));
+		BigDecimal pay = Average_of_Array.avg_double(payoff);
+		
+		System.out.println("[GPU] Average projected option price after the time period specified: " + res + " (average calculated using concurrent function)");
+		System.out.println("[GPU] Time to compute average:" + Time.from_nano(end_mult - start_mult));
+		System.out.println("[GPU] Projected option payoff after the time period specified: " + pay + " (average calculated using concurrent function)");
 		System.out.println("======================================================");
 		System.out.println("======================================================");
 	}
