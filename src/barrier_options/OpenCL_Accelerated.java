@@ -25,10 +25,11 @@ import org.jocl.cl_queue_properties;
 import bundled_utilities.Average_of_Array;
 import bundled_utilities.Time;
 
-//TODO: Implement barriers into the option price calculations in the kernel - it's in the package name, after all
 //TODO: Change kernel to use Kahan summation
 //TODO: Add option to write to file/database for metrics, with codes like [CLOCKS] and [TOTAL] for easier parsing later
 //TODO: Graphing utility
+//TODO: use GMP for GPU accelerated array sum
+//TODO: Calculate total error from ideal based on floating point error in single and double precision floats, number of iterations, number of path divergences per iteration, etc.
 //full explanation of estimating down-and-out exotic option prices can be found at https://pdfs.semanticscholar.org/542f/6e1e9338632e3bc5b56dad2515854e34190f.pdf
 
 
