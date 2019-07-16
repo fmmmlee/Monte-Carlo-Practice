@@ -12,7 +12,7 @@ Just getting in some practice on different concepts (Monte Carlo Simulations, Op
 - implement barriers into option price calculation in kernel
 - implement Kahan summation in kernel
 - add option to read/write metrics to log file
-- identify difference between CPUand GPU versions that causes CPU to have consistently lower estimate
+- identify difference between CPU and GPU versions that causes CPU to have consistently lower estimate
 - possibly change Box-Muller transformation in kernel to something that doesn't require using 2 random numbers (if such an algorithm exists and isn't a performance loss - I'm not hopeful)
 
 ### bundled_utilities
